@@ -485,6 +485,12 @@ void PPCInstrInfo::getNoop(MCInst &NopInst) const {
   NopInst.setOpcode(PPC::NOP);
 }
 
+bool PPCInstrInfo:::isSchedulingBoundary(const MachineInstr &MI,
+                                         const MachineBasicBlock *MBB,
+                                         const MachineFunction &MF) const {
+  TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
+}
+
 // Branch analysis.
 // Note: If the condition register is set to CTR or CTR8 then this is a
 // BDNZ (imm == 1) or BDZ (imm == 0) branch.

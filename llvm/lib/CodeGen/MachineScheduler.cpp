@@ -438,7 +438,8 @@ static bool isSchedBoundary(MachineBasicBlock::iterator MI,
                             MachineBasicBlock *MBB,
                             MachineFunction *MF,
                             const TargetInstrInfo *TII) {
-  return MI->isCall() || TII->isSchedulingBoundary(*MI, MBB, *MF);
+  // TODO: Temporarily remove isCall check.
+  return TII->isSchedulingBoundary(*MI, MBB, *MF);
 }
 
 /// A region of an MBB for scheduling.

@@ -485,10 +485,10 @@ void PPCInstrInfo::getNoop(MCInst &NopInst) const {
   NopInst.setOpcode(PPC::NOP);
 }
 
-bool PPCInstrInfo:::isSchedulingBoundary(const MachineInstr &MI,
+bool PPCInstrInfo::isSchedulingBoundary(const MachineInstr &MI,
                                          const MachineBasicBlock *MBB,
                                          const MachineFunction &MF) const {
-  TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
+  return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
 }
 
 // Branch analysis.

@@ -485,9 +485,17 @@ void PPCInstrInfo::getNoop(MCInst &NopInst) const {
   NopInst.setOpcode(PPC::NOP);
 }
 
+/// On PowerPC, the ADJCALLSTACKUP and ADJCALLSTACKDOWN instrs are ignored 
+/// when lowering to real instructions. And we need to do scheduling across
+/// calls, so call is also not considered as a boundary any more.
 bool PPCInstrInfo::isSchedulingBoundary(const MachineInstr &MI,
-                                         const MachineBasicBlock *MBB,
-                                         const MachineFunction &MF) const {
+                                        const MachineBasicBlock *MBB,
+                                        const MachineFunction &MF) const {
+  if (MI.getOpcode() == PPC::ADJCALLSTACKUP ||
+      MI.getOpcode() == PPC::ADJCALLSTACKDOWN ||
+      MI.isCall()) {
+    return false;
+  }
   return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
 }
 

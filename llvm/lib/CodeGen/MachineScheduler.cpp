@@ -125,6 +125,11 @@ static cl::opt<bool> EnableMemOpCluster("misched-cluster", cl::Hidden,
 static cl::opt<bool> VerifyScheduling("verify-misched", cl::Hidden,
   cl::desc("Verify machine instrs before and after machine scheduling"));
 
+// Scheduling across call are disabled by default.
+static cl::opt<bool> EnableSchedAcrossCall("misched-x-call", cl::Hidden,
+                                           cl::desc("Enable scheduling across call."),
+                                           cl::init(false));
+
 // DAG subtrees must have at least this many nodes.
 static const unsigned MinSubtreeSize = 8;
 
@@ -385,6 +390,11 @@ bool MachineScheduler::runOnMachineFunction(MachineFunction &mf) {
   // Instantiate the selected scheduler for this target, function, and
   // optimization level.
   std::unique_ptr<ScheduleDAGInstrs> Scheduler(createMachineScheduler());
+
+  // Set up scheduling across calls from the command line option, disabled
+  // by default.
+  Scheduler->setSchedAcrossCalls(EnableSchedAcrossCall);
+
   scheduleRegions(*Scheduler, false);
 
   LLVM_DEBUG(LIS->dump());
@@ -434,12 +444,20 @@ bool PostMachineScheduler::runOnMachineFunction(MachineFunction &mf) {
 /// scheduling across calls. In PostRA scheduling, we need the isCall to enforce
 /// the boundary, but there would be no benefit to postRA scheduling across
 /// calls this late anyway.
+///
+/// A prototype on scheduling across calls are added. To enable it, please using
+/// the 'misched-x-call' option. Enabling the option doesn't ensure the scheduler
+/// can schedule it correctly. The target should have prepared for how to
+/// recognize the boundaries.
 static bool isSchedBoundary(MachineBasicBlock::iterator MI,
                             MachineBasicBlock *MBB,
                             MachineFunction *MF,
                             const TargetInstrInfo *TII) {
-  // TODO: Temporarily remove isCall check.
-  return TII->isSchedulingBoundary(*MI, MBB, *MF);
+  if (EnableSchedAcrossCall) {
+    return TII->isSchedulingBoundary(*MI, MBB, *MF);
+  } else {
+    return MI->isCall() || TII->isSchedulingBoundary(*MI, MBB, *MF);
+  }
 }
 
 /// A region of an MBB for scheduling.
@@ -574,6 +592,7 @@ void MachineSchedulerBase::scheduleRegions(ScheduleDAGInstrs &Scheduler,
       // This invalidates the original region iterators.
       Scheduler.schedule();
 
+      Scheduler.dump();
       // Close the current region.
       Scheduler.exitRegion();
     }

@@ -213,7 +213,7 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
       }
     }
   }
-  if (!ExitMI || (!ExitMI->isCall() && !ExitMI->isBarrier())) {
+  if (!ExitMI || ((SchedAcrossCalls || !ExitMI->isCall()) && !ExitMI->isBarrier())) {
     // For others, e.g. fallthrough, conditional branch, assume the exit
     // uses all the registers that are livein to the successor blocks.
     for (const MachineBasicBlock *Succ : BB->successors()) {
@@ -799,7 +799,7 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       RPTracker->recede(RegOpers);
     }
 
-    assert(
+     assert(
         (CanHandleTerminators || (!MI.isTerminator() && !MI.isPosition())) &&
         "Cannot schedule terminators or labels!");
 

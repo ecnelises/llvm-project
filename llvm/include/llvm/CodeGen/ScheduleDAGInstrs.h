@@ -180,6 +180,10 @@ namespace llvm {
     /// case of a huge region that gets reduced).
     SUnit *BarrierChain = nullptr;
 
+    /// Scheduling across call instructions are disabled by default to avoid
+    /// possible testing issues.
+    bool SchedAcrossCalls = false;
+
   public:
     /// A list of SUnits, used in Value2SUsMap, during DAG construction.
     /// Note: to gain speed it might be worth investigating an optimized
@@ -266,6 +270,9 @@ namespace llvm {
         SU->SchedClass = SchedModel.resolveSchedClass(SU->getInstr());
       return SU->SchedClass;
     }
+
+    /// Toggle options about scheduling across calls.
+    void setSchedAcrossCalls(bool option) { SchedAcrossCalls = option; }
 
     /// Returns an iterator to the top of the current scheduling region.
     MachineBasicBlock::iterator begin() const { return RegionBegin; }

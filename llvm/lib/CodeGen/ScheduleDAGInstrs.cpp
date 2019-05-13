@@ -204,6 +204,13 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
   // Add dependencies on the defs and uses of the instruction.
   if (ExitMI) {
     for (const MachineOperand &MO : ExitMI->operands()) {
+      if (MO.isRegMask()) {
+        for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
+          if (MO.clobbersPhysReg(Reg)) {
+            Uses.insert(PhysRegSUOper(&ExitSU, -1, Reg));
+          }
+        }
+      }
       if (!MO.isReg() || MO.isDef()) continue;
       unsigned Reg = MO.getReg();
       if (TargetRegisterInfo::isPhysicalRegister(Reg)) {
@@ -225,9 +232,15 @@ void ScheduleDAGInstrs::addSchedBarrierDeps() {
   }
 }
 
+void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
+  const MachineOperand &MO = SU->getInstr()->getOperand(OperIdx);
+  unsigned Reg = MO.getReg();
+  addPhysRegDataDeps(SU, OperIdx, Reg);
+}
+
 /// MO is an operand of SU's instruction that defines a physical register. Adds
 /// data dependencies from SU to any uses of the physical register.
-void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
+void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx, unsigned Reg) {
   const MachineOperand &MO = SU->getInstr()->getOperand(OperIdx);
   assert(MO.isDef() && "expect physreg def");
 
@@ -238,8 +251,8 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
   // "fake" operands added by regalloc.
   const MCInstrDesc *DefMIDesc = &SU->getInstr()->getDesc();
   bool ImplicitPseudoDef = (OperIdx >= DefMIDesc->getNumOperands() &&
-                            !DefMIDesc->hasImplicitDefOfPhysReg(MO.getReg()));
-  for (MCRegAliasIterator Alias(MO.getReg(), TRI, true);
+                            !DefMIDesc->hasImplicitDefOfPhysReg(Reg));
+  for (MCRegAliasIterator Alias(Reg, TRI, true);
        Alias.isValid(); ++Alias) {
     if (!Uses.contains(*Alias))
       continue;
@@ -279,13 +292,19 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
   }
 }
 
-/// Adds register dependencies (data, anti, and output) from this SUnit
-/// to following instructions in the same scheduling region that depend the
-/// physical register referenced at OperIdx.
 void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
   MachineInstr *MI = SU->getInstr();
   MachineOperand &MO = MI->getOperand(OperIdx);
   unsigned Reg = MO.getReg();
+  addPhysRegDeps(SU, OperIdx, Reg);
+}
+
+/// Adds register dependencies (data, anti, and output) from this SUnit
+/// to following instructions in the same scheduling region that depend the
+/// physical register referenced at OperIdx.
+void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg) {
+  MachineInstr *MI = SU->getInstr();
+  MachineOperand &MO = MI->getOperand(OperIdx);
   // We do not need to track any dependencies for constant registers.
   if (MRI.isConstantPhysReg(Reg))
     return;
@@ -312,7 +331,7 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
         else {
           SDep Dep(SU, Kind, /*Reg=*/*Alias);
           Dep.setLatency(
-            SchedModel.computeOutputLatency(MI, OperIdx, DefSU->getInstr()));
+            SchedModel.computeOutputLatencyWithReg(MI, Reg, DefSU->getInstr()));
           DefSU->addPred(Dep);
         }
       }
@@ -328,7 +347,7 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx) {
     if (RemoveKillFlags)
       MO.setIsKill(false);
   } else {
-    addPhysRegDataDeps(SU, OperIdx);
+    addPhysRegDataDeps(SU, OperIdx, Reg);
 
     // Clear previous uses and defs of this register and its subergisters.
     for (MCSubRegIterator SubReg(Reg, TRI, true); SubReg.isValid(); ++SubReg) {
@@ -373,16 +392,22 @@ LaneBitmask ScheduleDAGInstrs::getLaneMaskForMO(const MachineOperand &MO) const
   return TRI->getSubRegIndexLaneMask(SubReg);
 }
 
+void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx) {
+  MachineInstr *MI = SU->getInstr();
+  MachineOperand &MO = MI->getOperand(OperIdx);
+  unsigned Reg = MO.getReg();
+  addVRegDefDeps(SU, OperIdx, Reg);
+}
+
 /// Adds register output and data dependencies from this SUnit to instructions
 /// that occur later in the same scheduling region if they read from or write to
 /// the virtual register defined at OperIdx.
 ///
 /// TODO: Hoist loop induction variable increments. This has to be
 /// reevaluated. Generally, IV scheduling should be done before coalescing.
-void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx) {
+void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx, unsigned Reg) {
   MachineInstr *MI = SU->getInstr();
   MachineOperand &MO = MI->getOperand(OperIdx);
-  unsigned Reg = MO.getReg();
 
   LaneBitmask DefLaneMask;
   LaneBitmask KillLaneMask;
@@ -464,7 +489,7 @@ void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx) {
       continue;
     SDep Dep(SU, SDep::Output, Reg);
     Dep.setLatency(
-      SchedModel.computeOutputLatency(MI, OperIdx, DefSU->getInstr()));
+      SchedModel.computeOutputLatencyWithReg(MI, Reg, DefSU->getInstr()));
     DefSU->addPred(Dep);
 
     // Update current definition. This can get tricky if the def was about a
@@ -482,16 +507,22 @@ void ScheduleDAGInstrs::addVRegDefDeps(SUnit *SU, unsigned OperIdx) {
     CurrentVRegDefs.insert(VReg2SUnit(Reg, LaneMask, SU));
 }
 
+void ScheduleDAGInstrs::addVRegUseDeps(SUnit *SU, unsigned OperIdx) {
+  const MachineInstr *MI = SU->getInstr();
+  const MachineOperand &MO = MI->getOperand(OperIdx);
+  unsigned Reg = MO.getReg();
+  addVRegUseDeps(SU, OperIdx, Reg);
+}
+
 /// Adds a register data dependency if the instruction that defines the
 /// virtual register used at OperIdx is mapped to an SUnit. Add a register
 /// antidependency from this SUnit to instructions that occur later in the same
 /// scheduling region if they write the virtual register.
 ///
 /// TODO: Handle ExitSU "uses" properly.
-void ScheduleDAGInstrs::addVRegUseDeps(SUnit *SU, unsigned OperIdx) {
+void ScheduleDAGInstrs::addVRegUseDeps(SUnit *SU, unsigned OperIdx, unsigned Reg) {
   const MachineInstr *MI = SU->getInstr();
   const MachineOperand &MO = MI->getOperand(OperIdx);
-  unsigned Reg = MO.getReg();
 
   // Remember the use. Data dependencies will be added when we find the def.
   LaneBitmask LaneMask = TrackLaneMasks ? getLaneMaskForMO(MO)
@@ -811,6 +842,15 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
     bool HasVRegDef = false;
     for (unsigned j = 0, n = MI.getNumOperands(); j != n; ++j) {
       const MachineOperand &MO = MI.getOperand(j);
+      // Extract clobbered registers from register masks in some instructions
+      // like call, since we may enable scheduling across calls.
+      if (MO.isRegMask()) {
+        for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
+          if (MO.clobbersPhysReg(Reg)) {
+            addPhysRegDeps(SU, j, Reg);
+          }
+        }
+      }
       if (!MO.isReg() || !MO.isDef())
         continue;
       unsigned Reg = MO.getReg();
@@ -824,6 +864,13 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
     // Now process all uses.
     for (unsigned j = 0, n = MI.getNumOperands(); j != n; ++j) {
       const MachineOperand &MO = MI.getOperand(j);
+      if (MO.isRegMask()) {
+        for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
+          if (MO.clobbersPhysReg(Reg)) {
+            addPhysRegDeps(SU, j, Reg);
+          }
+        }
+      }
       // Only look at use operands.
       // We do not need to check for MO.readsReg() here because subsequent
       // subregister defs will get output dependence edges and need no

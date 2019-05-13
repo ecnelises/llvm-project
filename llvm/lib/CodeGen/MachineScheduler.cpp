@@ -128,7 +128,7 @@ static cl::opt<bool> VerifyScheduling("verify-misched", cl::Hidden,
 // Scheduling across call are disabled by default.
 static cl::opt<bool> EnableSchedAcrossCall("misched-x-call", cl::Hidden,
                                            cl::desc("Enable scheduling across call."),
-                                           cl::init(false));
+                                           cl::init(true));
 
 // DAG subtrees must have at least this many nodes.
 static const unsigned MinSubtreeSize = 8;
@@ -427,6 +427,7 @@ bool PostMachineScheduler::runOnMachineFunction(MachineFunction &mf) {
   // Instantiate the selected scheduler for this target, function, and
   // optimization level.
   std::unique_ptr<ScheduleDAGInstrs> Scheduler(createPostMachineScheduler());
+  Scheduler->setSchedAcrossCalls(EnableSchedAcrossCall);
   scheduleRegions(*Scheduler, true);
 
   if (VerifyScheduling)
@@ -592,7 +593,7 @@ void MachineSchedulerBase::scheduleRegions(ScheduleDAGInstrs &Scheduler,
       // This invalidates the original region iterators.
       Scheduler.schedule();
 
-      Scheduler.dump();
+      //Scheduler.dump();
       // Close the current region.
       Scheduler.exitRegion();
     }

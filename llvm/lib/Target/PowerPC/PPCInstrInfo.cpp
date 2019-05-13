@@ -74,7 +74,7 @@ UseOldLatencyCalc("ppc-old-latency-calc", cl::Hidden,
 
 static cl::opt<bool> IgnoreCallBoundary("ignore-call-boundary", cl::Hidden,
                                         cl::desc("Disable seeing calls as scheduling boundaries."),
-                                        cl::init(false));
+                                        cl::init(true));
 
 // Index into the OpcodesForSpill array.
 enum SpillOpcodeKey {

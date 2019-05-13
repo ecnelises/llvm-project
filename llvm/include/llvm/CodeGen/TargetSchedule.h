@@ -194,6 +194,9 @@ public:
   unsigned computeOutputLatency(const MachineInstr *DefMI, unsigned DefOperIdx,
                                 const MachineInstr *DepMI) const;
 
+  unsigned computeOutputLatencyWithReg(const MachineInstr *DefMI, unsigned Reg,
+                                       const MachineInstr *DepMI) const;
+
   /// Compute the reciprocal throughput of the given instruction.
   double computeReciprocalThroughput(const MachineInstr *MI) const;
   double computeReciprocalThroughput(const MCInst &MI) const;

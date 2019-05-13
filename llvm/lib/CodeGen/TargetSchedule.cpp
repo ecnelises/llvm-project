@@ -289,9 +289,16 @@ TargetSchedModel::computeInstrLatency(const MachineInstr *MI,
 unsigned TargetSchedModel::
 computeOutputLatency(const MachineInstr *DefMI, unsigned DefOperIdx,
                      const MachineInstr *DepMI) const {
+  unsigned Reg = DefMI->getOperand(DefOperIdx).getReg();
+  return computeOutputLatencyWithReg(DefMI, Reg, DepMI);
+}
+
+unsigned TargetSchedModel::
+computeOutputLatencyWithReg(const MachineInstr *DefMI, unsigned Reg,
+                            const MachineInstr *DepMI) const {
   if (!SchedModel.isOutOfOrder())
     return 1;
-
+  
   // Out-of-order processor can dispatch WAW dependencies in the same cycle.
 
   // Treat predication as a data dependency for out-of-order cpus. In-order
@@ -300,7 +307,6 @@ computeOutputLatency(const MachineInstr *DefMI, unsigned DefOperIdx,
   // TODO: The following hack exists because predication passes do not
   // correctly append imp-use operands, and readsReg() strangely returns false
   // for predicated defs.
-  unsigned Reg = DefMI->getOperand(DefOperIdx).getReg();
   const MachineFunction &MF = *DefMI->getMF();
   const TargetRegisterInfo *TRI = MF.getSubtarget().getRegisterInfo();
   if (!DepMI->readsRegister(Reg, TRI) && TII->isPredicated(*DepMI))

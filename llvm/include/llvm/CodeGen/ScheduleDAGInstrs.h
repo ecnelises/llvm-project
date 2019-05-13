@@ -368,6 +368,11 @@ namespace llvm {
     void addVRegDefDeps(SUnit *SU, unsigned OperIdx);
     void addVRegUseDeps(SUnit *SU, unsigned OperIdx);
 
+    void addPhysRegDataDeps(SUnit *SU, unsigned OperIdx, unsigned Reg);
+    void addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg);
+    void addVRegDefDeps(SUnit *SU, unsigned OperIdx, unsigned Reg);
+    void addVRegUseDeps(SUnit *SU, unsigned OperIdx, unsigned Reg);
+
     /// Initializes register live-range state for updating kills.
     /// PostRA helper for rewriting kill flags.
     void startBlockForKills(MachineBasicBlock *BB);

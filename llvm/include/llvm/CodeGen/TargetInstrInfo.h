@@ -1355,6 +1355,11 @@ public:
                                 SDNode *DefNode, unsigned DefIdx,
                                 SDNode *UseNode, unsigned UseIdx) const;
 
+  virtual int getOperandLatencyWithReg(const InstrItineraryData *ItinData,
+                                       const MachineInstr &DefMI, unsigned DefIdx,
+                                       const MachineInstr &UseMI, unsigned UseIdx,
+                                       unsigned Reg) const;
+
   /// Compute and return the use operand latency of a given pair of def and use.
   /// In most cases, the static scheduling itinerary was enough to determine the
   /// operand latency. But it may not be possible for instructions with variable

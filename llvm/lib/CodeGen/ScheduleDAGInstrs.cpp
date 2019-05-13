@@ -242,7 +242,7 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx) {
 /// data dependencies from SU to any uses of the physical register.
 void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx, unsigned Reg) {
   const MachineOperand &MO = SU->getInstr()->getOperand(OperIdx);
-  assert(MO.isDef() && "expect physreg def");
+  assert((MO.isRegMask() || MO.isDef()) && "expect physreg def");
 
   // Ask the target if address-backscheduling is desirable, and if so how much.
   const TargetSubtargetInfo &ST = MF.getSubtarget();
@@ -281,8 +281,12 @@ void ScheduleDAGInstrs::addPhysRegDataDeps(SUnit *SU, unsigned OperIdx, unsigned
           (UseMIDesc && UseOp >= ((int)UseMIDesc->getNumOperands()) &&
            !UseMIDesc->hasImplicitUseOfPhysReg(*Alias));
       if (!ImplicitPseudoDef && !ImplicitPseudoUse) {
-        Dep.setLatency(SchedModel.computeOperandLatency(SU->getInstr(), OperIdx,
-                                                        RegUse, UseOp));
+        if (MO.isRegMask())
+          Dep.setLatency(SchedModel.computeOperandLatencyWithReg(SU->getInstr(), OperIdx,
+                                                                 RegUse, UseOp, Reg));
+        else
+          Dep.setLatency(SchedModel.computeOperandLatency(SU->getInstr(), OperIdx,
+                                                          RegUse, UseOp));
         ST.adjustSchedDependency(SU, UseSU, Dep);
       } else
         Dep.setLatency(0);
@@ -315,7 +319,7 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg
   // in the same cycle as the using instruction.
   // TODO: Using a latency of 1 here for output dependencies assumes
   //       there's no cost for reusing registers.
-  SDep::Kind Kind = MO.isUse() ? SDep::Anti : SDep::Output;
+  SDep::Kind Kind = (!MO.isRegMask() && MO.isUse()) ? SDep::Anti : SDep::Output;
   for (MCRegAliasIterator Alias(Reg, TRI, true); Alias.isValid(); ++Alias) {
     if (!Defs.contains(*Alias))
       continue;
@@ -324,7 +328,7 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg
       if (DefSU == &ExitSU)
         continue;
       if (DefSU != SU &&
-          (Kind != SDep::Output || !MO.isDead() ||
+          (Kind != SDep::Output || (!MO.isRegMask() && !MO.isDead()) ||
            !DefSU->getInstr()->registerDefIsDead(*Alias))) {
         if (Kind == SDep::Anti)
           DefSU->addPred(SDep(SU, Kind, /*Reg=*/*Alias));
@@ -338,7 +342,7 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg
     }
   }
 
-  if (!MO.isDef()) {
+  if (!MO.isRegMask() && !MO.isDef()) {
     SU->hasPhysRegUses = true;
     // Either insert a new Reg2SUnits entry with an empty SUnits list, or
     // retrieve the existing SUnits list for this register's uses.
@@ -353,10 +357,10 @@ void ScheduleDAGInstrs::addPhysRegDeps(SUnit *SU, unsigned OperIdx, unsigned Reg
     for (MCSubRegIterator SubReg(Reg, TRI, true); SubReg.isValid(); ++SubReg) {
       if (Uses.contains(*SubReg))
         Uses.eraseAll(*SubReg);
-      if (!MO.isDead())
+      if (!MO.isRegMask() && !MO.isDead())
         Defs.eraseAll(*SubReg);
     }
-    if (MO.isDead() && SU->isCall) {
+    if ((MO.isRegMask() || MO.isDead()) && SU->isCall) {
       // Calls will not be reordered because of chain dependencies (see
       // below). Since call operands are dead, calls may continue to be added
       // to the DefList making dependence checking quadratic in the size of
@@ -846,8 +850,9 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       // like call, since we may enable scheduling across calls.
       if (MO.isRegMask()) {
         for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
-          if (MO.clobbersPhysReg(Reg)) {
+          if (MO.clobbersPhysReg(Reg) && TargetRegisterInfo::isPhysicalRegister(Reg)) {
             addPhysRegDeps(SU, j, Reg);
+            //llvm::outs() << "CLOBBERS " << Reg << ", physical? " << TargetRegisterInfo::isPhysicalRegister(Reg) << "\n";
           }
         }
       }
@@ -866,7 +871,7 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       const MachineOperand &MO = MI.getOperand(j);
       if (MO.isRegMask()) {
         for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
-          if (MO.clobbersPhysReg(Reg)) {
+          if (MO.clobbersPhysReg(Reg) && TargetRegisterInfo::isPhysicalRegister(Reg)) {
             addPhysRegDeps(SU, j, Reg);
           }
         }

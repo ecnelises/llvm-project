@@ -170,6 +170,10 @@ public:
   unsigned computeOperandLatency(const MachineInstr *DefMI, unsigned DefOperIdx,
                                  const MachineInstr *UseMI, unsigned UseOperIdx)
     const;
+  
+  unsigned computeOperandLatencyWithReg(const MachineInstr *DefMI, unsigned DefOperIdx,
+                                        const MachineInstr *UseMI, unsigned UseOperIdx,
+                                        unsigned Reg) const;
 
   /// Compute the instruction latency based on the available machine
   /// model.

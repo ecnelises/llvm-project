@@ -161,6 +161,11 @@ class PPCInstrInfo : public PPCGenInstrInfo {
   const unsigned *getLoadOpcodesForSpillArray() const;
   virtual void anchor();
 
+  virtual int getOperandLatencyWithReg(const InstrItineraryData *ItinData,
+                                       const MachineInstr &DefMI, unsigned DefIdx,
+                                       const MachineInstr &UseMI, unsigned UseIdx,
+                                       unsigned Reg) const override;
+
 protected:
   /// Commutes the operands in the given instruction.
   /// The commutable operands are specified by their indices OpIdx1 and OpIdx2.
@@ -214,6 +219,7 @@ public:
                         const MachineInstr &DefMI, unsigned DefIdx,
                         const MachineInstr &UseMI,
                         unsigned UseIdx) const override;
+
   int getOperandLatency(const InstrItineraryData *ItinData,
                         SDNode *DefNode, unsigned DefIdx,
                         SDNode *UseNode, unsigned UseIdx) const override {

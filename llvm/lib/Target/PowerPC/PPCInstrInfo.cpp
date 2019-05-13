@@ -177,18 +177,15 @@ unsigned PPCInstrInfo::getInstrLatency(const InstrItineraryData *ItinData,
   return Latency;
 }
 
-int PPCInstrInfo::getOperandLatency(const InstrItineraryData *ItinData,
-                                    const MachineInstr &DefMI, unsigned DefIdx,
-                                    const MachineInstr &UseMI,
-                                    unsigned UseIdx) const {
+int PPCInstrInfo::getOperandLatencyWithReg(const InstrItineraryData *ItinData,
+                                           const MachineInstr &DefMI, unsigned DefIdx,
+                                           const MachineInstr &UseMI, unsigned UseIdx,
+                                           unsigned Reg) const {
   int Latency = PPCGenInstrInfo::getOperandLatency(ItinData, DefMI, DefIdx,
                                                    UseMI, UseIdx);
 
   if (!DefMI.getParent())
     return Latency;
-
-  const MachineOperand &DefMO = DefMI.getOperand(DefIdx);
-  unsigned Reg = DefMO.getReg();
 
   bool IsRegCR;
   if (TargetRegisterInfo::isVirtualRegister(Reg)) {
@@ -228,6 +225,16 @@ int PPCInstrInfo::getOperandLatency(const InstrItineraryData *ItinData,
   }
 
   return Latency;
+}
+
+int PPCInstrInfo::getOperandLatency(const InstrItineraryData *ItinData,
+                                    const MachineInstr &DefMI, unsigned DefIdx,
+                                    const MachineInstr &UseMI,
+                                    unsigned UseIdx) const {
+  const MachineOperand &DefMO = DefMI.getOperand(DefIdx);
+  unsigned Reg = DefMO.getReg();
+
+  return getOperandLatencyWithReg(ItinData, DefMI, DefIdx, UseMI, UseIdx, Reg);
 }
 
 // This function does not list all associative and commutative operations, but

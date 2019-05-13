@@ -1041,6 +1041,13 @@ TargetInstrInfo::getOperandLatency(const InstrItineraryData *ItinData,
   return ItinData->getOperandLatency(DefClass, DefIdx, UseClass, UseIdx);
 }
 
+int TargetInstrInfo::getOperandLatencyWithReg(const InstrItineraryData *ItinData,
+                                              const MachineInstr &DefMI, unsigned DefIdx,
+                                              const MachineInstr &UseMI, unsigned UseIdx,
+                                              unsigned Reg) const {
+  return getOperandLatency(ItinData, DefMI, DefIdx, UseMI, UseIdx);
+}
+
 int TargetInstrInfo::getInstrLatency(const InstrItineraryData *ItinData,
                                      SDNode *N) const {
   if (!ItinData || ItinData->isEmpty())

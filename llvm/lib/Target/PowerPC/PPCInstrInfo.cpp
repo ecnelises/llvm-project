@@ -72,6 +72,10 @@ static cl::opt<bool>
 UseOldLatencyCalc("ppc-old-latency-calc", cl::Hidden,
   cl::desc("Use the old (incorrect) instruction latency calculation"));
 
+static cl::opt<bool> IgnoreCallBoundary("ignore-call-boundary", cl::Hidden,
+                                        cl::desc("Disable seeing calls as scheduling boundaries."),
+                                        cl::init(false));
+
 // Index into the OpcodesForSpill array.
 enum SpillOpcodeKey {
   SOK_Int4Spill,
@@ -491,9 +495,9 @@ void PPCInstrInfo::getNoop(MCInst &NopInst) const {
 bool PPCInstrInfo::isSchedulingBoundary(const MachineInstr &MI,
                                         const MachineBasicBlock *MBB,
                                         const MachineFunction &MF) const {
-  if (MI.getOpcode() == PPC::ADJCALLSTACKUP ||
+  if (IgnoreCallBoundary && (MI.getOpcode() == PPC::ADJCALLSTACKUP ||
       MI.getOpcode() == PPC::ADJCALLSTACKDOWN ||
-      MI.isCall()) {
+      MI.isCall())) {
     return false;
   }
   return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);

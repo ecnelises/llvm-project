@@ -834,7 +834,7 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       RPTracker->recede(RegOpers);
     }
 
-     assert(
+    assert(
         (CanHandleTerminators || (!MI.isTerminator() && !MI.isPosition())) &&
         "Cannot schedule terminators or labels!");
 
@@ -852,7 +852,6 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
         for (unsigned Reg = 0; Reg < TRI->getNumRegs(); ++Reg) {
           if (MO.clobbersPhysReg(Reg) && TargetRegisterInfo::isPhysicalRegister(Reg)) {
             addPhysRegDeps(SU, j, Reg);
-            //llvm::outs() << "CLOBBERS " << Reg << ", physical? " << TargetRegisterInfo::isPhysicalRegister(Reg) << "\n";
           }
         }
       }

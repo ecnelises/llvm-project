@@ -502,9 +502,10 @@ void PPCInstrInfo::getNoop(MCInst &NopInst) const {
 bool PPCInstrInfo::isSchedulingBoundary(const MachineInstr &MI,
                                         const MachineBasicBlock *MBB,
                                         const MachineFunction &MF) const {
+  if (MI.isTerminator() || MI.isPosition()) return true;
   if (IgnoreCallBoundary && (MI.getOpcode() == PPC::ADJCALLSTACKUP ||
-      MI.getOpcode() == PPC::ADJCALLSTACKDOWN ||
-      MI.isCall())) {
+                             MI.getOpcode() == PPC::ADJCALLSTACKDOWN ||
+                             MI.isCall())) {
     return false;
   }
   return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);

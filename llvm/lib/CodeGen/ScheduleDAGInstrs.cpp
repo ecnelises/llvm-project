@@ -693,13 +693,28 @@ void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
                          Val2SUsMap.getTrueMemOrderLatency());
 }
 
+static bool readsWritesLocally(MachineInstr *MI) {
+  for (auto i = 0U; i < MI->getNumOperands(); ++i) {
+    const auto& MO = MI->getOperand(i);
+    if (!MO.isReg() && !MO.isImm() && !MO.isCImm() && !MO.isFPImm() &&
+        !MO.isSymbol() && !MO.isFI() && !MO.isCPI())
+      return false;
+  }
+  return true;
+}
+
 void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map) {
   assert(BarrierChain != nullptr);
 
   for (auto &I : map) {
     SUList &sus = I.second;
-    for (auto *SU : sus)
-      SU->addPredBarrier(BarrierChain);
+    for (auto *SU : sus) {
+      // Since we enabled scheduling across calls, it's better not to add
+      // unnecessary barriers for instructions only reads or writes locally.
+      // Also, order of calls cannot be broken.
+      if (SU->isCall || !readsWritesLocally(SU->getInstr()))
+        SU->addPredBarrier(BarrierChain);
+    }
   }
   map.clear();
 }
@@ -815,7 +830,7 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
     }
     if (MI.isDebugLabel())
       continue;
-
+    
     SUnit *SU = MISUnitMap[&MI];
     assert(SU && "No SUnit mapped to this MI");
 

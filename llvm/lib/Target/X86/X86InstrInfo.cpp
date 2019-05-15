@@ -6531,6 +6531,19 @@ void X86InstrInfo::getNoop(MCInst &NopInst) const {
   NopInst.setOpcode(X86::NOOP);
 }
 
+bool X86InstrInfo::isSchedulingBoundary(const MachineInstr &MI,
+                                        const MachineBasicBlock *MBB,
+                                        const MachineFunction &MF) const {
+  // TODO: What about 32-bit call stack operations?
+  if (MI.isTerminator() || MI.isPosition()) return true;
+  if (MI.getOpcode() == X86::ADJCALLSTACKUP64 ||
+      MI.getOpcode() == X86::ADJCALLSTACKDOWN64 ||
+      MI.isCall()) {
+    return false;
+  }
+  return TargetInstrInfo::isSchedulingBoundary(MI, MBB, MF);
+}
+
 bool X86InstrInfo::isHighLatencyDef(int opc) const {
   switch (opc) {
   default: return false;

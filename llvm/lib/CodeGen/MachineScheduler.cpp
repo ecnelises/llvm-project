@@ -593,7 +593,7 @@ void MachineSchedulerBase::scheduleRegions(ScheduleDAGInstrs &Scheduler,
       // This invalidates the original region iterators.
       Scheduler.schedule();
 
-      // Scheduler.dump();
+      //Scheduler.dump();
       // Close the current region.
       Scheduler.exitRegion();
     }

@@ -31,6 +31,11 @@
 
 namespace llvm {
 
+#define TRACK_SCHED(FIELD, CONTENT) \
+  do { \
+    llvm::outs() << FIELD << ": " << CONTENT << "\n"; \
+  } while (0)
+
 template<class Graph> class GraphWriter;
 class LLVMTargetMachine;
 class MachineFunction;

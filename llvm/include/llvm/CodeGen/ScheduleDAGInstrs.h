@@ -227,7 +227,7 @@ namespace llvm {
     /// case where the new BarrierChain (a global memory object) has a higher
     /// NodeNum than all SUs in map. It is assumed BarrierChain has been set
     /// before calling this.
-    void addBarrierChain(Value2SUsMap &map);
+    void addBarrierChain(Value2SUsMap &map, AliasAnalysis *AA = nullptr);
 
     /// Inserts a barrier chain in a huge region, far below current SU.
     /// Adds barrier chain edges from all SUs in map with higher NodeNums than

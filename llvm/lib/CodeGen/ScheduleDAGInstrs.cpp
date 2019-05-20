@@ -693,13 +693,17 @@ void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
                          Val2SUsMap.getTrueMemOrderLatency());
 }
 
-void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map) {
+void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map, AliasAnalysis *AA) {
   assert(BarrierChain != nullptr);
 
   for (auto &I : map) {
     SUList &sus = I.second;
-    for (auto *SU : sus)
+    for (auto *SU : sus) {
+//      if (AA != nullptr && !BarrierChain->getInstr()->mayAlias(AA, *(SU->getInstr()), false)) {
+//        continue;
+//      }
       SU->addPredBarrier(BarrierChain);
+    }
   }
   map.clear();
 }

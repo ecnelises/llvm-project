@@ -593,7 +593,7 @@ void MachineSchedulerBase::scheduleRegions(ScheduleDAGInstrs &Scheduler,
       // This invalidates the original region iterators.
       Scheduler.schedule();
 
-      //Scheduler.dump();
+//      Scheduler.dump();
       // Close the current region.
       Scheduler.exitRegion();
     }
@@ -731,6 +731,10 @@ void ScheduleDAGMI::enterRegion(MachineBasicBlock *bb,
 /// by the scheduling strategy to perform additional code motion.
 void ScheduleDAGMI::moveInstruction(
   MachineInstr *MI, MachineBasicBlock::iterator InsertPos) {
+//  TRACK_SCHED("MOVEINSTR", "");
+//  MI->print(llvm::outs());
+//  InsertPos->print(llvm::outs());
+//  llvm::outs() << "MOVE END\n";
   // Advance RegionBegin if the first instruction moves down.
   if (&*RegionBegin == MI)
     ++RegionBegin;
@@ -2461,6 +2465,8 @@ LLVM_DUMP_METHOD void SchedBoundary::dumpScheduledState() const {
 void GenericSchedulerBase::SchedCandidate::
 initResourceDelta(const ScheduleDAGMI *DAG,
                   const TargetSchedModel *SchedModel) {
+  //llvm::outs() << "INITING RESOURCE DELTA: ";
+  //SU->getInstr()->print(llvm::outs());
   if (!Policy.ReduceResIdx && !Policy.DemandResIdx)
     return;
 
@@ -2468,11 +2474,13 @@ initResourceDelta(const ScheduleDAGMI *DAG,
   for (TargetSchedModel::ProcResIter
          PI = SchedModel->getWriteProcResBegin(SC),
          PE = SchedModel->getWriteProcResEnd(SC); PI != PE; ++PI) {
-    if (PI->ProcResourceIdx == Policy.ReduceResIdx)
+    if (SU->isCall || PI->ProcResourceIdx == Policy.ReduceResIdx)
       ResDelta.CritResources += PI->Cycles;
     if (PI->ProcResourceIdx == Policy.DemandResIdx)
       ResDelta.DemandedResources += PI->Cycles;
   }
+//  llvm::outs() << "RES DELTA CRIC" << ResDelta.CritResources << "\n";
+//  llvm::outs() << "RES DELTA DEMAND" << ResDelta.DemandedResources << "\n";
 }
 
 /// Compute remaining latency. We need this both to determine whether the
@@ -3008,10 +3016,56 @@ void GenericScheduler::initCandidate(SchedCandidate &Cand, SUnit *SU,
 void GenericScheduler::tryCandidate(SchedCandidate &Cand,
                                     SchedCandidate &TryCand,
                                     SchedBoundary *Zone) const {
+  bool SameBoundary = Zone != nullptr;
+
   // Initialize the candidate if needed.
   if (!Cand.isValid()) {
     TryCand.Reason = NodeOrder;
     return;
+  }
+
+  // We only compare a subset of features when comparing nodes between
+  // Top and Bottom boundary. Some properties are simply incomparable, in many
+  // other instances we should only override the other boundary if something
+  // is a clear good pick on one boundary. Skip heuristics that are more
+  // "tie-breaking" in nature.
+
+  if (SameBoundary) {
+    // For loops that are acyclic path limited, aggressively schedule for
+    // latency. Within an single cycle, whenever CurrMOps > 0, allow normal
+    // heuristics to take precedence.
+    if (Rem.IsAcyclicLatencyLimited && !Zone->getCurrMOps() &&
+        tryLatency(TryCand, Cand, *Zone))
+      return;
+
+    // Prioritize instructions that read unbuffered resources by stall cycles.
+    if (tryLess(Zone->getLatencyStallCycles(TryCand.SU),
+                Zone->getLatencyStallCycles(Cand.SU), TryCand, Cand, Stall))
+      return;
+  }
+
+  if (SameBoundary) {
+    // Avoid critical resource consumption and balance the schedule.
+    TryCand.initResourceDelta(DAG, SchedModel);
+    if (tryLess(TryCand.ResDelta.CritResources, Cand.ResDelta.CritResources,
+                TryCand, Cand, ResourceReduce))
+      return;
+    if (tryGreater(TryCand.ResDelta.DemandedResources,
+                   Cand.ResDelta.DemandedResources,
+                   TryCand, Cand, ResourceDemand))
+      return;
+
+    // Avoid serializing long latency dependence chains.
+    // For acyclic path limited loops, latency was already checked above.
+    if (!RegionPolicy.DisableLatencyHeuristic && TryCand.Policy.ReduceLatency &&
+        !Rem.IsAcyclicLatencyLimited && tryLatency(TryCand, Cand, *Zone))
+      return;
+
+    // Fall through to original instruction order.
+    if ((Zone->isTop() && TryCand.SU->NodeNum < Cand.SU->NodeNum)
+        || (!Zone->isTop() && TryCand.SU->NodeNum > Cand.SU->NodeNum)) {
+      TryCand.Reason = NodeOrder;
+    }
   }
 
   // Bias PhysReg Defs and copies to their uses and defined respectively.
@@ -3032,26 +3086,6 @@ void GenericScheduler::tryCandidate(SchedCandidate &Cand,
                                                TryCand, Cand, RegCritical, TRI,
                                                DAG->MF))
     return;
-
-  // We only compare a subset of features when comparing nodes between
-  // Top and Bottom boundary. Some properties are simply incomparable, in many
-  // other instances we should only override the other boundary if something
-  // is a clear good pick on one boundary. Skip heuristics that are more
-  // "tie-breaking" in nature.
-  bool SameBoundary = Zone != nullptr;
-  if (SameBoundary) {
-    // For loops that are acyclic path limited, aggressively schedule for
-    // latency. Within an single cycle, whenever CurrMOps > 0, allow normal
-    // heuristics to take precedence.
-    if (Rem.IsAcyclicLatencyLimited && !Zone->getCurrMOps() &&
-        tryLatency(TryCand, Cand, *Zone))
-      return;
-
-    // Prioritize instructions that read unbuffered resources by stall cycles.
-    if (tryLess(Zone->getLatencyStallCycles(TryCand.SU),
-                Zone->getLatencyStallCycles(Cand.SU), TryCand, Cand, Stall))
-      return;
-  }
 
   // Keep clustered nodes together to encourage downstream peephole
   // optimizations which may reduce resource requirements.
@@ -3082,30 +3116,6 @@ void GenericScheduler::tryCandidate(SchedCandidate &Cand,
                                                TryCand, Cand, RegMax, TRI,
                                                DAG->MF))
     return;
-
-  if (SameBoundary) {
-    // Avoid critical resource consumption and balance the schedule.
-    TryCand.initResourceDelta(DAG, SchedModel);
-    if (tryLess(TryCand.ResDelta.CritResources, Cand.ResDelta.CritResources,
-                TryCand, Cand, ResourceReduce))
-      return;
-    if (tryGreater(TryCand.ResDelta.DemandedResources,
-                   Cand.ResDelta.DemandedResources,
-                   TryCand, Cand, ResourceDemand))
-      return;
-
-    // Avoid serializing long latency dependence chains.
-    // For acyclic path limited loops, latency was already checked above.
-    if (!RegionPolicy.DisableLatencyHeuristic && TryCand.Policy.ReduceLatency &&
-        !Rem.IsAcyclicLatencyLimited && tryLatency(TryCand, Cand, *Zone))
-      return;
-
-    // Fall through to original instruction order.
-    if ((Zone->isTop() && TryCand.SU->NodeNum < Cand.SU->NodeNum)
-        || (!Zone->isTop() && TryCand.SU->NodeNum > Cand.SU->NodeNum)) {
-      TryCand.Reason = NodeOrder;
-    }
-  }
 }
 
 /// Pick the best candidate from the queue.

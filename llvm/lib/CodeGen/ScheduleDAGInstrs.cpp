@@ -693,6 +693,18 @@ void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
                          Val2SUsMap.getTrueMemOrderLatency());
 }
 
+static bool readWritesLocally(MachineInstr &MI) {
+  // for (unsigned i = 0U; i < MI.getNumOperands(); ++i) {
+  //   MachineOperand &MO = MI.getOperand(i);
+  //   if (MI.isCall()) return true;
+  //   if (!MO.isReg() && !MO.isImm() && !MO.isFI() && !MO.isCImm() &&
+  //       !MO.isRegMask() && !MO.isFPImm()) {
+  //     return false;
+  //   }
+  // }
+  return false;
+}
+
 void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map, AliasAnalysis *AA) {
   assert(BarrierChain != nullptr);
 
@@ -702,6 +714,7 @@ void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map, AliasAnalysis *AA) {
 //      if (AA != nullptr && !BarrierChain->getInstr()->mayAlias(AA, *(SU->getInstr()), false)) {
 //        continue;
 //      }
+      if (readWritesLocally(*BarrierChain->getInstr())) continue;
       SU->addPredBarrier(BarrierChain);
     }
   }

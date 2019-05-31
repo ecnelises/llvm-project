@@ -74,34 +74,63 @@ const MCInstrDesc *ScheduleDAG::getNodeDesc(const SDNode *Node) const {
 
 LLVM_DUMP_METHOD void SDep::dump(const TargetRegisterInfo *TRI) const {
   switch (getKind()) {
-  case Data:   dbgs() << "Data"; break;
-  case Anti:   dbgs() << "Anti"; break;
-  case Output: dbgs() << "Out "; break;
-  case Order:  dbgs() << "Ord "; break;
+  case Data:   outs() << "Data"; break;
+  case Anti:   outs() << "Anti"; break;
+  case Output: outs() << "Out "; break;
+  case Order:  outs() << "Ord "; break;
   }
 
   switch (getKind()) {
   case Data:
-    dbgs() << " Latency=" << getLatency();
+    outs() << " Latency=" << getLatency();
     if (TRI && isAssignedRegDep())
-      dbgs() << " Reg=" << printReg(getReg(), TRI);
+      outs() << " Reg=" << printReg(getReg(), TRI);
     break;
   case Anti:
   case Output:
-    dbgs() << " Latency=" << getLatency();
+    outs() << " Latency=" << getLatency();
     break;
   case Order:
-    dbgs() << " Latency=" << getLatency();
+    outs() << " Latency=" << getLatency();
     switch(Contents.OrdKind) {
-    case Barrier:      dbgs() << " Barrier"; break;
+    case Barrier:      outs() << " Barrier"; break;
     case MayAliasMem:
-    case MustAliasMem: dbgs() << " Memory"; break;
-    case Artificial:   dbgs() << " Artificial"; break;
-    case Weak:         dbgs() << " Weak"; break;
-    case Cluster:      dbgs() << " Cluster"; break;
+    case MustAliasMem: outs() << " Memory"; break;
+    case Artificial:   outs() << " Artificial"; break;
+    case Weak:         outs() << " Weak"; break;
+    case Cluster:      outs() << " Cluster"; break;
     }
     break;
   }
+  // switch (getKind()) {
+  // case Data:   dbgs() << "Data"; break;
+  // case Anti:   dbgs() << "Anti"; break;
+  // case Output: dbgs() << "Out "; break;
+  // case Order:  dbgs() << "Ord "; break;
+  // }
+
+  // switch (getKind()) {
+  // case Data:
+  //   dbgs() << " Latency=" << getLatency();
+  //   if (TRI && isAssignedRegDep())
+  //     dbgs() << " Reg=" << printReg(getReg(), TRI);
+  //   break;
+  // case Anti:
+  // case Output:
+  //   dbgs() << " Latency=" << getLatency();
+  //   break;
+  // case Order:
+  //   dbgs() << " Latency=" << getLatency();
+  //   switch(Contents.OrdKind) {
+  //   case Barrier:      dbgs() << " Barrier"; break;
+  //   case MayAliasMem:
+  //   case MustAliasMem: dbgs() << " Memory"; break;
+  //   case Artificial:   dbgs() << " Artificial"; break;
+  //   case Weak:         dbgs() << " Weak"; break;
+  //   case Cluster:      dbgs() << " Cluster"; break;
+  //   }
+  //   break;
+  // }
 }
 
 bool SUnit::addPred(const SDep &D, bool Required) {

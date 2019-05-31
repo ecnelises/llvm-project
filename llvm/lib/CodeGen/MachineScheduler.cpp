@@ -370,6 +370,8 @@ bool MachineScheduler::runOnMachineFunction(MachineFunction &mf) {
   } else if (!mf.getSubtarget().enableMachineScheduler())
     return false;
 
+  llvm::outs() << "[MF] " << mf.getName() << "\n";
+
   LLVM_DEBUG(dbgs() << "Before MISched:\n"; mf.print(dbgs()));
 
   // Initialize the context of the pass.
@@ -593,7 +595,7 @@ void MachineSchedulerBase::scheduleRegions(ScheduleDAGInstrs &Scheduler,
       // This invalidates the original region iterators.
       Scheduler.schedule();
 
-      Scheduler.dump();
+      // Scheduler.dump();
       // Close the current region.
       Scheduler.exitRegion();
     }
@@ -1241,6 +1243,7 @@ void ScheduleDAGMILive::schedule() {
   while (true) {
     LLVM_DEBUG(dbgs() << "** ScheduleDAGMILive::schedule picking next node\n");
     SUnit *SU = SchedImpl->pickNode(IsTopNode);
+    llvm::outs() << "[PICK] " << SU << "\n";
     if (!SU) break;
 
     assert(!SU->isScheduled && "Node already scheduled");
@@ -3131,7 +3134,10 @@ void GenericScheduler::pickNodeFromQueue(SchedBoundary &Zone,
   RegPressureTracker &TempTracker = const_cast<RegPressureTracker&>(RPTracker);
 
   ReadyQueue &Q = Zone.Available;
+  
   for (SUnit *SU : Q) {
+
+    llvm::outs() << SU << "\n";
 
     SchedCandidate TryCand(ZonePolicy);
     initCandidate(TryCand, SU, Zone.isTop(), RPTracker, TempTracker);
@@ -3235,6 +3241,7 @@ SUnit *GenericScheduler::pickNode(bool &IsTopNode) {
     return nullptr;
   }
   SUnit *SU;
+  llvm::outs() << "PICK START\n";
   do {
     if (RegionPolicy.OnlyTopDown) {
       SU = Top.pickOnlyChoice();
@@ -3267,6 +3274,8 @@ SUnit *GenericScheduler::pickNode(bool &IsTopNode) {
     Top.removeReady(SU);
   if (SU->isBottomReady())
     Bot.removeReady(SU);
+
+  llvm::outs() << "PICK END\n";
 
   LLVM_DEBUG(dbgs() << "Scheduling SU(" << SU->NodeNum << ") "
                     << *SU->getInstr());

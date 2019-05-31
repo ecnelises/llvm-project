@@ -694,14 +694,14 @@ void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
 }
 
 static bool readWritesLocally(MachineInstr &MI) {
-  // for (unsigned i = 0U; i < MI.getNumOperands(); ++i) {
-  //   MachineOperand &MO = MI.getOperand(i);
-  //   if (MI.isCall()) return true;
-  //   if (!MO.isReg() && !MO.isImm() && !MO.isFI() && !MO.isCImm() &&
-  //       !MO.isRegMask() && !MO.isFPImm()) {
-  //     return false;
-  //   }
-  // }
+  for (unsigned i = 0U; i < MI.getNumOperands(); ++i) {
+    MachineOperand &MO = MI.getOperand(i);
+    if (MI.isCall()) return true;
+    if (!MO.isReg() && !MO.isImm() && !MO.isFI() && !MO.isCImm() &&
+        !MO.isRegMask() && !MO.isFPImm()) {
+      return false;
+    }
+  }
   return false;
 }
 
@@ -711,9 +711,6 @@ void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map, AliasAnalysis *AA) {
   for (auto &I : map) {
     SUList &sus = I.second;
     for (auto *SU : sus) {
-//      if (AA != nullptr && !BarrierChain->getInstr()->mayAlias(AA, *(SU->getInstr()), false)) {
-//        continue;
-//      }
       if (readWritesLocally(*BarrierChain->getInstr())) continue;
       SU->addPredBarrier(BarrierChain);
     }
@@ -1029,6 +1026,30 @@ void ScheduleDAGInstrs::buildSchedGraph(AliasAnalysis *AA,
       reduceHugeMemNodeMaps(NonAliasStores, NonAliasLoads, getReductionSize());
     }
   }
+
+  for (MachineBasicBlock::iterator MII = RegionEnd, MIE = RegionBegin;
+       MII != MIE; --MII) {
+    MachineInstr &MI = *std::prev(MII);
+    SUnit *SU = MISUnitMap[&MI];
+    llvm::outs() << "[ORIG] " << SU << "\n";
+    MI.print(llvm::outs());
+    // SU->dumpAttributes();
+    llvm::outs() << "# Preds\n";
+    for (const SDep &Dep : SU->Preds) {
+      llvm::outs() << Dep.getSUnit() << " ";
+      Dep.dump(TRI);
+      llvm::outs() << "\n";
+    }
+    llvm::outs() << "# Succs\n";
+    for (const SDep &Dep : SU->Preds) {
+      llvm::outs() << Dep.getSUnit() << " ";
+      Dep.dump(TRI);
+      llvm::outs() << "\n";
+    }
+  }
+
+  llvm::outs() << "[ORIG] " << (void*)0 << "\n";
+
 
   if (DbgMI)
     FirstDbgValue = DbgMI;

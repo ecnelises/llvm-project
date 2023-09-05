@@ -86,8 +86,8 @@ entry:
 define <4 x i32> @test5(<4 x i32> %a, <4 x i32> %b, <4 x i32> %c, <4 x i32> %d) {
 ; CHECK-VSX-LABEL: test5:
 ; CHECK-VSX:       # %bb.0: # %entry
-; CHECK-VSX-NEXT:    vcmpequw v4, v4, v5
-; CHECK-VSX-NEXT:    xxsel v2, v3, v2, v4
+; CHECK-VSX-NEXT:    xvcmpeqdp vs0, v4, v5
+; CHECK-VSX-NEXT:    xxsel v2, v3, v2, vs0
 ; CHECK-VSX-NEXT:    blr
 ;
 ; CHECK-NOVSX-LABEL: test5:

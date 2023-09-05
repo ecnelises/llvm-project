@@ -34,14 +34,14 @@ define <4 x i32> @cmp_sel_C1_or_C2_vec(<4 x i32> %x, <4 x i32> %y) {
 ; CHECK:       # %bb.0:
 ; CHECK-NEXT:    addis 3, 2, .LCPI1_0@toc@ha
 ; CHECK-NEXT:    addis 4, 2, .LCPI1_1@toc@ha
-; CHECK-NEXT:    vcmpequw 2, 2, 3
+; CHECK-NEXT:    xvcmpeqdp 1, 34, 35
 ; CHECK-NEXT:    addi 3, 3, .LCPI1_0@toc@l
 ; CHECK-NEXT:    addi 4, 4, .LCPI1_1@toc@l
 ; CHECK-NEXT:    lxvd2x 0, 0, 3
-; CHECK-NEXT:    lxvd2x 1, 0, 4
-; CHECK-NEXT:    xxswapd 35, 0
-; CHECK-NEXT:    xxswapd 36, 1
-; CHECK-NEXT:    xxsel 34, 36, 35, 34
+; CHECK-NEXT:    lxvd2x 2, 0, 4
+; CHECK-NEXT:    xxswapd 34, 0
+; CHECK-NEXT:    xxswapd 35, 2
+; CHECK-NEXT:    xxsel 34, 35, 34, 1
 ; CHECK-NEXT:    blr
   %cond = icmp eq <4 x i32> %x, %y
   %add = select <4 x i1> %cond, <4 x i32> <i32 3000, i32 1, i32 -1, i32 0>, <4 x i32> <i32 42, i32 0, i32 -2, i32 -1>

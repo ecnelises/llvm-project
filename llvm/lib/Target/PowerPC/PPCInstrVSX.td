@@ -2707,6 +2707,44 @@ def : Pat<(vselect v4i32:$vA, v4f32:$vB, v4f32:$vC),
           (XXSEL $vC, $vB, $vA)>;
 def : Pat<(vselect v2i64:$vA, v2f64:$vB, v2f64:$vC),
           (XXSEL $vC, $vB, $vA)>;
+
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETEQ)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPEQDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETNE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPEQDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETGE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPGEDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETLT)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPGEDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETGT)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPGTDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETLE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPGTDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETOEQ)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPEQDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETONE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPEQDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETOGE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPGEDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETOLT)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPGEDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETOGT)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $fval, $tval, (XVCMPGTDP $lhs, $rhs))>;
+def : Pat<(vselect (v4i32 (setcc v4i32:$lhs, v4i32:$rhs, SETOLE)),
+                    v4i32:$tval, v4i32:$fval),
+          (XXSEL $tval, $fval, (XVCMPGTDP $lhs, $rhs))>;
+
 def : Pat<(v1i128 (vselect v1i128:$vA, v1i128:$vB, v1i128:$vC)),
           (COPY_TO_REGCLASS
                  (XXSEL (COPY_TO_REGCLASS $vC, VSRC),

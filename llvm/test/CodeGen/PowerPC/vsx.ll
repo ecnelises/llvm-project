@@ -558,26 +558,26 @@ entry:
 define <4 x i32> @test20(<4 x i32> %a, <4 x i32> %b, <4 x i32> %c, <4 x i32> %d) {
 ; CHECK-LABEL: test20:
 ; CHECK:       # %bb.0: # %entry
-; CHECK-NEXT:    vcmpequw v4, v4, v5
-; CHECK-NEXT:    xxsel v2, v3, v2, v4
+; CHECK-NEXT:    xvcmpeqdp vs0, v4, v5
+; CHECK-NEXT:    xxsel v2, v3, v2, vs0
 ; CHECK-NEXT:    blr
 ;
 ; CHECK-REG-LABEL: test20:
 ; CHECK-REG:       # %bb.0: # %entry
-; CHECK-REG-NEXT:    vcmpequw v4, v4, v5
-; CHECK-REG-NEXT:    xxsel v2, v3, v2, v4
+; CHECK-REG-NEXT:    xvcmpeqdp vs0, v4, v5
+; CHECK-REG-NEXT:    xxsel v2, v3, v2, vs0
 ; CHECK-REG-NEXT:    blr
 ;
 ; CHECK-FISL-LABEL: test20:
 ; CHECK-FISL:       # %bb.0: # %entry
-; CHECK-FISL-NEXT:    vcmpequw v4, v4, v5
-; CHECK-FISL-NEXT:    xxsel v2, v3, v2, v4
+; CHECK-FISL-NEXT:    xvcmpeqdp vs0, v4, v5
+; CHECK-FISL-NEXT:    xxsel v2, v3, v2, vs0
 ; CHECK-FISL-NEXT:    blr
 ;
 ; CHECK-LE-LABEL: test20:
 ; CHECK-LE:       # %bb.0: # %entry
-; CHECK-LE-NEXT:    vcmpequw v4, v4, v5
-; CHECK-LE-NEXT:    xxsel v2, v3, v2, v4
+; CHECK-LE-NEXT:    xvcmpeqdp vs0, v4, v5
+; CHECK-LE-NEXT:    xxsel v2, v3, v2, vs0
 ; CHECK-LE-NEXT:    blr
 entry:
   %m = icmp eq <4 x i32> %c, %d

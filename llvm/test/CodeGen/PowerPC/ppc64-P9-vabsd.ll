@@ -1843,10 +1843,10 @@ define <4 x i32> @absd_int32_sgt(<4 x i32>, <4 x i32>) {
 ;
 ; CHECK-PWR78-LABEL: absd_int32_sgt:
 ; CHECK-PWR78:       # %bb.0:
-; CHECK-PWR78-NEXT:    vcmpgtsw v4, v2, v3
-; CHECK-PWR78-NEXT:    vsubuwm v5, v2, v3
+; CHECK-PWR78-NEXT:    xvcmpgtdp vs0, v2, v3
+; CHECK-PWR78-NEXT:    vsubuwm v4, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v2, v3, v2
-; CHECK-PWR78-NEXT:    xxsel v2, v2, v5, v4
+; CHECK-PWR78-NEXT:    xxsel v2, v2, v4, vs0
 ; CHECK-PWR78-NEXT:    blr
   %3 = icmp sgt <4 x i32> %0, %1
   %4 = sub <4 x i32> %0, %1
@@ -1865,8 +1865,7 @@ define <4 x i32> @absd_int32_sge(<4 x i32>, <4 x i32>) {
 ;
 ; CHECK-PWR78-LABEL: absd_int32_sge:
 ; CHECK-PWR78:       # %bb.0:
-; CHECK-PWR78-NEXT:    vcmpgtsw v4, v3, v2
-; CHECK-PWR78-NEXT:    xxlnor vs0, v4, v4
+; CHECK-PWR78-NEXT:    xvcmpgedp vs0, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v4, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v2, v3, v2
 ; CHECK-PWR78-NEXT:    xxsel v2, v2, v4, vs0
@@ -1888,10 +1887,10 @@ define <4 x i32> @absd_int32_slt(<4 x i32>, <4 x i32>) {
 ;
 ; CHECK-PWR78-LABEL: absd_int32_slt:
 ; CHECK-PWR78:       # %bb.0:
-; CHECK-PWR78-NEXT:    vcmpgtsw v4, v3, v2
-; CHECK-PWR78-NEXT:    vsubuwm v5, v2, v3
+; CHECK-PWR78-NEXT:    xvcmpgedp vs0, v2, v3
+; CHECK-PWR78-NEXT:    vsubuwm v4, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v2, v3, v2
-; CHECK-PWR78-NEXT:    xxsel v2, v5, v2, v4
+; CHECK-PWR78-NEXT:    xxsel v2, v2, v4, vs0
 ; CHECK-PWR78-NEXT:    blr
   %3 = icmp slt <4 x i32> %0, %1
   %4 = sub <4 x i32> %0, %1
@@ -1910,11 +1909,10 @@ define <4 x i32> @absd_int32_sle(<4 x i32>, <4 x i32>) {
 ;
 ; CHECK-PWR78-LABEL: absd_int32_sle:
 ; CHECK-PWR78:       # %bb.0:
-; CHECK-PWR78-NEXT:    vcmpgtsw v4, v2, v3
-; CHECK-PWR78-NEXT:    xxlnor vs0, v4, v4
+; CHECK-PWR78-NEXT:    xvcmpgtdp vs0, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v4, v2, v3
 ; CHECK-PWR78-NEXT:    vsubuwm v2, v3, v2
-; CHECK-PWR78-NEXT:    xxsel v2, v4, v2, vs0
+; CHECK-PWR78-NEXT:    xxsel v2, v2, v4, vs0
 ; CHECK-PWR78-NEXT:    blr
   %3 = icmp sle <4 x i32> %0, %1
   %4 = sub <4 x i32> %0, %1

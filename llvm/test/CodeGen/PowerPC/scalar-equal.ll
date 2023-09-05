@@ -19,18 +19,24 @@
 define double @testoeq(double %a, double %b, double %c, double %d) {
 ; FAST-P8-LABEL: testoeq:
 ; FAST-P8:       # %bb.0: # %entry
-; FAST-P8-NEXT:    xssubdp f0, f1, f2
-; FAST-P8-NEXT:    xsnegdp f1, f0
-; FAST-P8-NEXT:    fsel f0, f0, f3, f4
-; FAST-P8-NEXT:    fsel f1, f1, f0, f4
+; FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; FAST-P8-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; FAST-P8-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; FAST-P8-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; FAST-P8-NEXT:    xxsel vs1, vs4, vs3, vs0
+; FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; FAST-P8-NEXT:    blr
 ;
 ; FAST-P9-LABEL: testoeq:
 ; FAST-P9:       # %bb.0: # %entry
-; FAST-P9-NEXT:    xssubdp f0, f1, f2
-; FAST-P9-NEXT:    fsel f1, f0, f3, f4
-; FAST-P9-NEXT:    xsnegdp f0, f0
-; FAST-P9-NEXT:    fsel f1, f0, f1, f4
+; FAST-P9-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; FAST-P9-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; FAST-P9-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; FAST-P9-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; FAST-P9-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; FAST-P9-NEXT:    xxsel vs1, vs4, vs3, vs0
+; FAST-P9-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; FAST-P9-NEXT:    blr
 ;
 ; NO-FAST-P9-LABEL: testoeq:
@@ -60,34 +66,46 @@ entry:
 define double @testoeq_fast(double %a, double %b, double %c, double %d) {
 ; FAST-P8-LABEL: testoeq_fast:
 ; FAST-P8:       # %bb.0: # %entry
-; FAST-P8-NEXT:    xssubdp f0, f1, f2
-; FAST-P8-NEXT:    xsnegdp f1, f0
-; FAST-P8-NEXT:    fsel f0, f0, f3, f4
-; FAST-P8-NEXT:    fsel f1, f1, f0, f4
+; FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; FAST-P8-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; FAST-P8-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; FAST-P8-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; FAST-P8-NEXT:    xxsel vs1, vs4, vs3, vs0
+; FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; FAST-P8-NEXT:    blr
 ;
 ; FAST-P9-LABEL: testoeq_fast:
 ; FAST-P9:       # %bb.0: # %entry
-; FAST-P9-NEXT:    xssubdp f0, f1, f2
-; FAST-P9-NEXT:    fsel f1, f0, f3, f4
-; FAST-P9-NEXT:    xsnegdp f0, f0
-; FAST-P9-NEXT:    fsel f1, f0, f1, f4
+; FAST-P9-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; FAST-P9-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; FAST-P9-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; FAST-P9-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; FAST-P9-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; FAST-P9-NEXT:    xxsel vs1, vs4, vs3, vs0
+; FAST-P9-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; FAST-P9-NEXT:    blr
 ;
 ; NO-FAST-P9-LABEL: testoeq_fast:
 ; NO-FAST-P9:       # %bb.0: # %entry
-; NO-FAST-P9-NEXT:    xssubdp f0, f1, f2
-; NO-FAST-P9-NEXT:    fsel f1, f0, f3, f4
-; NO-FAST-P9-NEXT:    xsnegdp f0, f0
-; NO-FAST-P9-NEXT:    fsel f1, f0, f1, f4
+; NO-FAST-P9-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P9-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P9-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; NO-FAST-P9-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; NO-FAST-P9-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; NO-FAST-P9-NEXT:    xxsel vs1, vs4, vs3, vs0
+; NO-FAST-P9-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P9-NEXT:    blr
 ;
 ; NO-FAST-P8-LABEL: testoeq_fast:
 ; NO-FAST-P8:       # %bb.0: # %entry
-; NO-FAST-P8-NEXT:    xssubdp f0, f1, f2
-; NO-FAST-P8-NEXT:    xsnegdp f1, f0
-; NO-FAST-P8-NEXT:    fsel f0, f0, f3, f4
-; NO-FAST-P8-NEXT:    fsel f1, f1, f0, f4
+; NO-FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P8-NEXT:    xvcmpeqdp vs0, vs1, vs2
+; NO-FAST-P8-NEXT:    # kill: def $f4 killed $f4 def $vsl4
+; NO-FAST-P8-NEXT:    # kill: def $f3 killed $f3 def $vsl3
+; NO-FAST-P8-NEXT:    xxsel vs1, vs4, vs3, vs0
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P8-NEXT:    blr
 entry:
   %cmp = fcmp nnan ninf nsz oeq double %a, %b

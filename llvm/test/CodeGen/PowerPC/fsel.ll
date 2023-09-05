@@ -83,8 +83,8 @@ entry:
 ; CHECK-FM: blr
 
 ; CHECK-FM-VSX: @min1
-; CHECK-FM-VSX: xssubdp [[REG:[0-9]+]], 2, 1
-; CHECK-FM-VSX: fsel 1, [[REG]], 1, 2
+; CHECK-FM-VSX: xvcmpgtdp [[REG:[0-9]+]], 1, 2
+; CHECK-FM-VSX: xxsel 1, 1, 2, [[REG]]
 ; CHECK-FM-VSX: blr
 }
 
@@ -104,8 +104,8 @@ entry:
 ; CHECK-FM: blr
 
 ; CHECK-FM-VSX: @max1
-; CHECK-FM-VSX: xssubdp [[REG:[0-9]+]], 1, 2
-; CHECK-FM-VSX: fsel 1, [[REG]], 1, 2
+; CHECK-FM-VSX: xvcmpgedp [[REG:[0-9]+]], 1, 2
+; CHECK-FM-VSX: xxsel 1, 2, 1, [[REG]]
 ; CHECK-FM-VSX: blr
 }
 
@@ -125,8 +125,8 @@ entry:
 ; CHECK-FM: blr
 
 ; CHECK-FM-VSX: @cmp1
-; CHECK-FM-VSX: xssubdp [[REG:[0-9]+]], 1, 2
-; CHECK-FM-VSX: fsel 1, [[REG]], 3, 4
+; CHECK-FM-VSX: xvcmpgedp [[REG:[0-9]+]], 1, 2
+; CHECK-FM-VSX: xxsel 1, 4, 3, [[REG]]
 ; CHECK-FM-VSX: blr
 }
 
@@ -146,8 +146,8 @@ entry:
 ; CHECK-FM: blr
 
 ; CHECK-FM-VSX: @cmp2
-; CHECK-FM-VSX: xssubdp [[REG:[0-9]+]], 2, 1
-; CHECK-FM-VSX: fsel 1, [[REG]], 4, 3
+; CHECK-FM-VSX: xvcmpgtdp [[REG:[0-9]+]], 1, 2
+; CHECK-FM-VSX: xxsel 1, 4, 3, [[REG]]
 ; CHECK-FM-VSX: blr
 }
 
@@ -169,10 +169,8 @@ entry:
 ; CHECK-FM: blr
 
 ; CHECK-FM-VSX: @cmp3
-; CHECK-FM-VSX: xssubdp [[REG:[0-9]+]], 1, 2
-; CHECK-FM-VSX: xsnegdp [[REG3:[0-9]+]], [[REG]]
-; CHECK-FM-VSX: fsel [[REG2:[0-9]+]], [[REG]], 3, 4
-; CHECK-FM-VSX: fsel 1, [[REG3]], [[REG2]], 4
+; CHECK-FM-VSX: xvcmpeqdp [[REG:[0-9]+]], 1, 2
+; CHECK-FM-VSX: xxsel 1, 4, 3, [[REG]]
 ; CHECK-FM-VSX: blr
 }
 

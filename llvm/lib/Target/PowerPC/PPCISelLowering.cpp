@@ -8023,18 +8023,56 @@ SDValue PPCTargetLowering::LowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const {
     }
   }
 
+  // Cannot do any optimization if there is NaNs.
+  if (!DAG.getTarget().Options.NoNaNsFPMath && !Flags.hasNoNaNs())
+    return Op;
+
+  bool IsValidFpType = (CmpVT == MVT::f32 || CmpVT == MVT::f64) &&
+                       (ResVT == MVT::f32 || ResVT == MVT::f64);
+  bool IsRHSZero = isFloatingPointZero(RHS);
+
+  // (select_cc A, B, C, D, Pred) can be selected as
+  // (xxsel D, C, (xscmpeqdp/xscmpgtdp/... A, B)) if VSX is enabled. Don't do
+  // this if the rhs is zero as we could do some optimization later.
+  if (Subtarget.hasVSX() && IsValidFpType && !IsRHSZero) {
+    SDValue RegIdx = DAG.getTargetConstant(1, dl, MVT::i64);
+    SDValue SubReg = DAG.getTargetConstant(PPC::sub_64, dl, MVT::i32);
+
+    // Promote the type f32/f64 to v4i32 which vselect prefer.
+    LHS = SDValue(DAG.getMachineNode(TargetOpcode::SUBREG_TO_REG, dl,
+                                     MVT::v4i32, RegIdx, LHS, SubReg),
+                  0);
+    RHS = SDValue(DAG.getMachineNode(TargetOpcode::SUBREG_TO_REG, dl,
+                                     MVT::v4i32, RegIdx, RHS, SubReg),
+                  0);
+    TV = SDValue(DAG.getMachineNode(TargetOpcode::SUBREG_TO_REG, dl, MVT::v4i32,
+                                    RegIdx, TV, SubReg),
+                 0);
+    FV = SDValue(DAG.getMachineNode(TargetOpcode::SUBREG_TO_REG, dl, MVT::v4i32,
+                                    RegIdx, FV, SubReg),
+                 0);
+
+    // Lowering the select_cc to vselect + setcc.
+    SDValue SetCC = DAG.getNode(ISD::SETCC, dl, MVT::v4i32, LHS, RHS,
+                                Op.getOperand(4), Flags);
+    SDValue SEL =
+        DAG.getNode(ISD::VSELECT, dl, MVT::v4i32, SetCC, TV, FV, Flags);
+    return SDValue(DAG.getMachineNode(TargetOpcode::EXTRACT_SUBREG, dl,
+                                      ResVT, SEL, SubReg),
+                   0);
+  }
+
   // We might be able to do better than this under some circumstances, but in
   // general, fsel-based lowering of select is a finite-math-only optimization.
   // For more information, see section F.3 of the 2.06 ISA specification.
   // With ISA 3.0
-  if ((!DAG.getTarget().Options.NoInfsFPMath && !Flags.hasNoInfs()) ||
-      (!DAG.getTarget().Options.NoNaNsFPMath && !Flags.hasNoNaNs()))
+  if (!DAG.getTarget().Options.NoInfsFPMath && !Flags.hasNoInfs())
     return Op;
 
   // If the RHS of the comparison is a 0.0, we don't need to do the
   // subtraction at all.
   SDValue Sel1;
-  if (isFloatingPointZero(RHS))
+  if (IsRHSZero)
     switch (CC) {
     default: break;       // SETUO etc aren't handled by fsel.
     case ISD::SETNE:

@@ -21,20 +21,21 @@ define float @llvmintr_powf_f32_fast025(float %a) #1 {
 ; CHECK-LNX-NEXT:    xsabsdp 1, 1
 ; CHECK-LNX-NEXT:    xsmulsp 0, 3, 0
 ; CHECK-LNX-NEXT:    xsmulsp 3, 3, 4
-; CHECK-LNX-NEXT:    xssubsp 1, 1, 5
+; CHECK-LNX-NEXT:    xvcmpgedp 1, 1, 5
 ; CHECK-LNX-NEXT:    xsaddsp 0, 0, 2
 ; CHECK-LNX-NEXT:    xsmulsp 0, 3, 0
 ; CHECK-LNX-NEXT:    xxlxor 3, 3, 3
-; CHECK-LNX-NEXT:    fsel 0, 1, 0, 3
+; CHECK-LNX-NEXT:    xxsel 0, 3, 0, 1
 ; CHECK-LNX-NEXT:    xsrsqrtesp 1, 0
 ; CHECK-LNX-NEXT:    xsmulsp 6, 0, 1
 ; CHECK-LNX-NEXT:    xsabsdp 0, 0
 ; CHECK-LNX-NEXT:    xsmulsp 1, 6, 1
 ; CHECK-LNX-NEXT:    xsmulsp 4, 6, 4
-; CHECK-LNX-NEXT:    xssubsp 0, 0, 5
+; CHECK-LNX-NEXT:    xvcmpgedp 0, 0, 5
 ; CHECK-LNX-NEXT:    xsaddsp 1, 1, 2
 ; CHECK-LNX-NEXT:    xsmulsp 1, 4, 1
-; CHECK-LNX-NEXT:    fsel 1, 0, 1, 3
+; CHECK-LNX-NEXT:    xxsel 1, 3, 1, 0
+; CHECK-LNX-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; CHECK-LNX-NEXT:    blr
 ;
 ; CHECK-AIX-LABEL: llvmintr_powf_f32_fast025:
@@ -135,11 +136,11 @@ define float @llvmintr_powf_f32_fast075(float %a) #1 {
 ; CHECK-LNX-NEXT:    xsabsdp 1, 1
 ; CHECK-LNX-NEXT:    xsmulsp 0, 3, 0
 ; CHECK-LNX-NEXT:    xsmulsp 3, 3, 4
-; CHECK-LNX-NEXT:    xssubsp 1, 1, 5
+; CHECK-LNX-NEXT:    xvcmpgedp 1, 1, 5
 ; CHECK-LNX-NEXT:    xsaddsp 0, 0, 2
 ; CHECK-LNX-NEXT:    xsmulsp 0, 3, 0
 ; CHECK-LNX-NEXT:    xxlxor 3, 3, 3
-; CHECK-LNX-NEXT:    fsel 0, 1, 0, 3
+; CHECK-LNX-NEXT:    xxsel 0, 3, 0, 1
 ; CHECK-LNX-NEXT:    xsrsqrtesp 1, 0
 ; CHECK-LNX-NEXT:    xsmulsp 6, 0, 1
 ; CHECK-LNX-NEXT:    xsmulsp 1, 6, 1
@@ -147,8 +148,8 @@ define float @llvmintr_powf_f32_fast075(float %a) #1 {
 ; CHECK-LNX-NEXT:    xsaddsp 1, 1, 2
 ; CHECK-LNX-NEXT:    xsabsdp 2, 0
 ; CHECK-LNX-NEXT:    xsmulsp 1, 4, 1
-; CHECK-LNX-NEXT:    xssubsp 2, 2, 5
-; CHECK-LNX-NEXT:    fsel 1, 2, 1, 3
+; CHECK-LNX-NEXT:    xvcmpgedp 2, 2, 5
+; CHECK-LNX-NEXT:    xxsel 1, 3, 1, 2
 ; CHECK-LNX-NEXT:    xsmulsp 1, 0, 1
 ; CHECK-LNX-NEXT:    blr
 ;

@@ -122,8 +122,11 @@ define dso_local float @testfmax_fast(float %a, float %b) local_unnamed_addr {
 ;
 ; NO-FAST-P8-LABEL: testfmax_fast:
 ; NO-FAST-P8:       # %bb.0: # %entry
-; NO-FAST-P8-NEXT:    xssubsp f0, f2, f1
-; NO-FAST-P8-NEXT:    fsel f1, f0, f2, f1
+; NO-FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P8-NEXT:    xvcmpgtdp vs0, vs1, vs2
+; NO-FAST-P8-NEXT:    xxsel vs1, vs2, vs1, vs0
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P8-NEXT:    blr
 entry:
   %cmp = fcmp nnan ninf ogt float %a, %b
@@ -143,8 +146,11 @@ define dso_local double @testdmax_fast(double %a, double %b) local_unnamed_addr 
 ;
 ; NO-FAST-P8-LABEL: testdmax_fast:
 ; NO-FAST-P8:       # %bb.0: # %entry
-; NO-FAST-P8-NEXT:    xssubdp f0, f2, f1
-; NO-FAST-P8-NEXT:    fsel f1, f0, f2, f1
+; NO-FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P8-NEXT:    xvcmpgtdp vs0, vs1, vs2
+; NO-FAST-P8-NEXT:    xxsel vs1, vs2, vs1, vs0
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P8-NEXT:    blr
 entry:
   %cmp = fcmp nnan ninf ogt double %a, %b
@@ -164,8 +170,11 @@ define dso_local float @testfmin_fast(float %a, float %b) local_unnamed_addr {
 ;
 ; NO-FAST-P8-LABEL: testfmin_fast:
 ; NO-FAST-P8:       # %bb.0: # %entry
-; NO-FAST-P8-NEXT:    xssubsp f0, f1, f2
-; NO-FAST-P8-NEXT:    fsel f1, f0, f2, f1
+; NO-FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P8-NEXT:    xvcmpgedp vs0, vs1, vs2
+; NO-FAST-P8-NEXT:    xxsel vs1, vs1, vs2, vs0
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P8-NEXT:    blr
 entry:
   %cmp = fcmp nnan ninf olt float %a, %b
@@ -185,8 +194,11 @@ define dso_local double @testdmin_fast(double %a, double %b) local_unnamed_addr 
 ;
 ; NO-FAST-P8-LABEL: testdmin_fast:
 ; NO-FAST-P8:       # %bb.0: # %entry
-; NO-FAST-P8-NEXT:    xssubdp f0, f1, f2
-; NO-FAST-P8-NEXT:    fsel f1, f0, f2, f1
+; NO-FAST-P8-NEXT:    # kill: def $f2 killed $f2 def $vsl2
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 def $vsl1
+; NO-FAST-P8-NEXT:    xvcmpgedp vs0, vs1, vs2
+; NO-FAST-P8-NEXT:    xxsel vs1, vs1, vs2, vs0
+; NO-FAST-P8-NEXT:    # kill: def $f1 killed $f1 killed $vsl1
 ; NO-FAST-P8-NEXT:    blr
 entry:
   %cmp = fcmp nnan ninf olt double %a, %b

@@ -1638,6 +1638,8 @@ bool PPCTargetLowering::preferIncOfAddToSubOfNot(EVT VT) const {
 const char *PPCTargetLowering::getTargetNodeName(unsigned Opcode) const {
   switch ((PPCISD::NodeType)Opcode) {
   case PPCISD::FIRST_NUMBER:    break;
+  case PPCISD::ROTL64:          return "PPCISD::ROTL64";
+  case PPCISD::ROTL32:          return "PPCISD::ROTL32";
   case PPCISD::FSEL:            return "PPCISD::FSEL";
   case PPCISD::XSMAXC:          return "PPCISD::XSMAXC";
   case PPCISD::XSMINC:          return "PPCISD::XSMINC";
@@ -15507,6 +15509,11 @@ static bool isStoreConditional(SDValue Intrin, unsigned &StoreWidth) {
   return true;
 }
 
+static SDValue combineROTL64(SDNode *N,
+                             PPCTargetLowering::DAGCombinerInfo &DCI) {
+  return SDValue();
+}
+
 SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
                                              DAGCombinerInfo &DCI) const {
   SelectionDAG &DAG = DCI.DAG;
@@ -15547,6 +15554,8 @@ SDValue PPCTargetLowering::PerformDAGCombine(SDNode *N,
     return combineSRL(N, DCI);
   case ISD::MUL:
     return combineMUL(N, DCI);
+  case PPCISD::ROTL64:
+    return combineROTL64(N, DCI);
   case ISD::FMA:
   case PPCISD::FNMSUB:
     return combineFMALike(N, DCI);
@@ -17523,6 +17532,16 @@ SDValue PPCTargetLowering::combineSHL(SDNode *N, DAGCombinerInfo &DCI) const {
 
   SDValue N0 = N->getOperand(0);
   ConstantSDNode *CN1 = dyn_cast<ConstantSDNode>(N->getOperand(1));
+  SDLoc DL(N0);
+
+  if (CN1 && Subtarget.isPPC64()) {
+    SDValue Rotl =
+        DCI.DAG.getNode(PPCISD::ROTL64, DL, MVT::i64, N0, N->getOperand(1));
+    SDValue Mask =
+        DCI.DAG.getConstant((~0UL) << CN1->getZExtValue(), DL, MVT::i64);
+    return DCI.DAG.getNode(ISD::AND, DL, MVT::i64, Rotl, Mask);
+  }
+
   if (!Subtarget.isISA3_0() || !Subtarget.isPPC64() ||
       N0.getOpcode() != ISD::SIGN_EXTEND ||
       N0.getOperand(0).getValueType() != MVT::i32 || CN1 == nullptr ||
@@ -17536,7 +17555,6 @@ SDValue PPCTargetLowering::combineSHL(SDNode *N, DAGCombinerInfo &DCI) const {
       ExtsSrc.getOperand(0).getOpcode() == ISD::AssertSext)
     return SDValue();
 
-  SDLoc DL(N0);
   SDValue ShiftBy = SDValue(CN1, 0);
   // We want the shift amount to be i32 on the extswli, but the shift could
   // have an i64.

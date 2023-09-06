@@ -125,6 +125,12 @@ namespace llvm {
     /// The CMPB instruction (takes two operands of i32 or i64).
     CMPB,
 
+    /// ROTL64 - Left rotate 64-bit integer X
+    ROTL64,
+
+    /// ROTL32 - Left rotate (X<<32)|X where X is 32-bit integer
+    ROTL32,
+
     /// Hi/Lo - These represent the high and low 16-bit parts of a global
     /// address respectively.  These nodes have two operands, the first of
     /// which must be a TargetGlobalAddress, and the second of which must be a

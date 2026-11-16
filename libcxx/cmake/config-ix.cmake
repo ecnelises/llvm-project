@@ -5,6 +5,7 @@ include(LLVMCheckCompilerLinkerFlag)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CheckCSourceCompiles)
+include(CheckCXXSourceCompiles)
 
 # The compiler driver may be implicitly trying to link against libunwind.
 # This is normally ok (libcxx relies on an unwinder), but if libunwind is
@@ -102,6 +103,22 @@ int main(void) { return 0; }
 endif()
 
 check_symbol_exists(__PICOLIBC__ "string.h" PICOLIBC)
+
+# Use the target sysroot, not the headers used by clients, to select the
+# random_device backend. The backend also affects the public class layout.
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID AND LIBCXX_ENABLE_RANDOM_DEVICE)
+  foreach(version 25 36)
+    check_cxx_source_compiles("
+#include <features.h>
+#if !defined(__GLIBC_PREREQ)
+#  error Not glibc
+#elif !__GLIBC_PREREQ(2, ${version})
+#  error glibc is too old
+#endif
+int main() { return 0; }
+" LIBCXX_HAS_GLIBC_2_${version})
+  endforeach()
+endif()
 
 # Check libraries
 if(WIN32 AND NOT MINGW)

@@ -64,8 +64,7 @@
 //      Use arc4random(). This allows obtaining random data even when
 //      using sandboxing mechanisms. On some platforms like Apple, this
 //      is the recommended source of entropy for user-space programs.
-//      When this option is used, the token passed to `std::random_device`'s
-//      constructor *must* be "/dev/urandom" -- anything else is an error.
+//      The token passed to `std::random_device`'s constructor is ignored.
 //
 // _LIBCPP_USING_GETENTROPY
 //      Use getentropy().
@@ -85,6 +84,16 @@
 #  if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) ||                     \
       defined(__DragonFly__) || defined(__BIONIC__)
 #    define _LIBCPP_USING_ARC4_RANDOM
+#  elif defined(__linux__)
+// The installed configuration must agree with the library even when clients
+// use a different glibc sysroot.
+#    if _LIBCPP_RANDOM_DEVICE_USE_ARC4_RANDOM
+#      define _LIBCPP_USING_ARC4_RANDOM
+#    elif _LIBCPP_RANDOM_DEVICE_USE_GETENTROPY
+#      define _LIBCPP_USING_GETENTROPY
+#    else
+#      define _LIBCPP_USING_DEV_RANDOM
+#    endif
 #  elif defined(__wasi__) || defined(__EMSCRIPTEN__)
 #    define _LIBCPP_USING_GETENTROPY
 #  elif defined(__Fuchsia__)

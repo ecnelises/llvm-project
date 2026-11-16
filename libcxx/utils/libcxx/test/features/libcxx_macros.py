@@ -33,6 +33,7 @@ macros = {
     "_LIBCPP_ABI_FIX_UNORDERED_CONTAINER_SIZE_TYPE": "libcpp-has-abi-fix-unordered-container-size-type",
     "_LIBCPP_DEPRECATED_ABI_DISABLE_PAIR_TRIVIAL_COPY_CTOR": "libcpp-deprecated-abi-disable-pair-trivial-copy-ctor",
     "_LIBCPP_ABI_NO_COMPRESSED_PAIR_PADDING": "libcpp-abi-no-compressed-pair-padding",
+    "_LIBCPP_ABI_NO_RANDOM_DEVICE_COMPATIBILITY_LAYOUT": "libcpp-abi-no-random-device-compatibility-layout",
     "_LIBCPP_ABI_USE_SMALL_DEQUE_BLOCK_SIZE": "libcpp-abi-use-small-deque-block-size",
     "_LIBCPP_ABI_COMPACT_LOCALE_ID": "libcpp-abi-compact-locale-id",
 }
@@ -45,6 +46,8 @@ for macro, feature in macros.items():
     )
 
 true_false_macros = {
+    "_LIBCPP_RANDOM_DEVICE_USE_ARC4_RANDOM": "libcpp-random-device-use-arc4-random",
+    "_LIBCPP_RANDOM_DEVICE_USE_GETENTROPY": "libcpp-random-device-use-getentropy",
     "_LIBCPP_HAS_THREAD_API_EXTERNAL": "libcpp-has-thread-api-external",
     "_LIBCPP_HAS_THREAD_API_PTHREAD": "libcpp-has-thread-api-pthread",
     "_LIBCPP_INSTRUMENTED_WITH_ASAN": "libcpp-instrumented-with-asan",

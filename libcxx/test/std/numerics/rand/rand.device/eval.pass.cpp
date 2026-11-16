@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: no-random-device
+// XFAIL: FROZEN-CXX03-HEADERS-FIXME && !no-exceptions && (libcpp-random-device-use-getentropy || libcpp-random-device-use-arc4-random)
 
 // <random>
 
